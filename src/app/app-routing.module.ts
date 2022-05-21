@@ -11,6 +11,14 @@ const routes: Routes = [
     redirectTo: 'home',
     pathMatch: 'full'
   },
+  {
+    path: 'google-maps-javascript',
+    loadChildren: () => import('./google-maps-javascript/google-maps-javascript.module').then( m => m.GoogleMapsJavascriptPageModule)
+  },
+  {
+    path: 'google-maps-capacitor',
+    loadChildren: () => import('./google-maps-capacitor/google-maps-capacitor.module').then( m => m.GoogleMapsCapacitorPageModule)
+  },
 ];
 
 @NgModule({

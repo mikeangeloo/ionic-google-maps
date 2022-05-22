@@ -1,5 +1,5 @@
 import {Component, ElementRef, ViewChild} from '@angular/core';
-declare var google;
+declare let google;
 
 import { Geolocation } from '@capacitor/geolocation';
 import {LatLng} from '@capacitor/google-maps/dist/typings/definitions';
@@ -42,6 +42,10 @@ export class GoogleMapsJavascriptPage {
       longitude: '31.052042'
     }
   ];
+
+  circle = null;
+  markerC = null;
+
   constructor() {}
 
   ionViewDidEnter() {
@@ -49,7 +53,7 @@ export class GoogleMapsJavascriptPage {
   }
 
   getCurrentCoords() {
-    let options = {
+    const options = {
       enableHighAccuracy: true,
       timeout: 5000,
       maximumAge: 0
@@ -57,6 +61,7 @@ export class GoogleMapsJavascriptPage {
     Geolocation.getCurrentPosition(options).then((res) => {
       this.latitude = res.coords.latitude;
       this.longitude = res.coords.longitude;
+      console.log('current locations cords --->', this.latitude, this.longitude);
       this.showMap(this.latitude, this.longitude);
     }, error => {
       if (error.code == 1) {
@@ -78,19 +83,19 @@ export class GoogleMapsJavascriptPage {
       center: currentLocation,
       zoom: 15,
       disableDefaultUI: true
-    }
+    };
     this.map = new google.maps.Map(this.mapRef.nativeElement, options);
 
-    let markerCurrentPosition = new google.maps.Marker({
+    const markerCurrentPosition = new google.maps.Marker({
       position: new google.maps.LatLng(this.latitude, this.longitude),
       map: this.map,
       draggable: false,
-      icon: {
-        url: 'https://app.econogruas.com/econogruas/assets/img/static/remolque-azul.svg',
-        size: new google.maps.Size(36, 50),
-        scaledSize: new google.maps.Size(36, 50),
-        anchor: new google.maps.Point(0, 50)
-      },
+      // icon: {
+      //   url: 'https://app.econogruas.com/econogruas/assets/img/static/remolque-azul.svg',
+      //   size: new google.maps.Size(36, 50),
+      //   scaledSize: new google.maps.Size(36, 50),
+      //   anchor: new google.maps.Point(0, 50)
+      // },
       title: 'test',
     });
 
@@ -99,20 +104,94 @@ export class GoogleMapsJavascriptPage {
     //this.addMarkersToMap(this.markers);
 
 
-    setTimeout(() => {
-      this.directionsDisplay.setMap(this.map);
-      let _destination = new google.maps.LatLng(20.6328511, -87.0655493);
-      this.calculateAndDisplayDistance(currentLocation, _destination);
+    // setTimeout(() => {
+    //   this.directionsDisplay.setMap(this.map);
+    //   const _destination = new google.maps.LatLng(20.6328511, -87.0655493);
+    //   this.calculateAndDisplayDistance(currentLocation, _destination);
+    //
+    // }, 400);
 
-    }, 400);
+    this.addCircleRadius();
+  }
 
+  initDrawingTools() {
+    // Circle
+    const drawingManager = new google.maps.drawing.DrawingManager({
+      drawingControlOptions: {
+        drawingModes: ['marker', 'circle']
+      }
+    });
+    drawingManager.setMap(this.map);
+    google.maps.event.addListener(drawingManager, 'overlaycomplete', (event) => {
+      if (event.type == 'circle') {
+        console.log('circle --->', event);
+        const center = event.overlay.getCenter();
+        this.circle = {
+          radius: event.overlay.getRadius(),
+          center: {
+            lat: center.lat(),
+            lng: center.lng()
+          },
+          overlay: event.overlay
+        };
+      } else if (event.type == 'marker') {
+        const position = event.overlay.position;
+        this.markerC = {
+          center: {
+            lat: position.lat(),
+            lng: position.lng()
+          }
+        };
+        const isInRadious = google.maps.geometry.spherical.computeDistanceBetween(position, this.circle.overlay.getCenter()) <= this.circle.radius;
+        console.log('isInRadious --->', isInRadious);
+      } else {
+        console.log('Something goes wrong');
+      }
+    });
+  }
+
+  addCircleRadius() {
+    const _circle = new google.maps.Circle({
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#FF0000',
+      fillOpacity: 0.35,
+      map: this.map,
+      center: {
+        lat: this.latitude,
+        lng: this.longitude
+      },
+      radius: 1000,
+      //editable: true,
+      //draggable: false
+    });
+
+
+    console.log('circle bounds --->', _circle.getRadius());
+    let circleLimitMarker = google.maps.geometry.spherical.computeOffset(_circle.getCenter(), 1000, 90, 0 );
+    console.log('circle coord --->', _circle.getCenter().lat());
+    console.log('computeOffset --->', circleLimitMarker.lat());
+    const markerCurrentPosition = new google.maps.Marker({
+      position: circleLimitMarker,
+      map: this.map,
+      draggable: true,
+    });
+
+    let distance = google.maps.geometry.spherical.computeDistanceBetween(_circle.getCenter(), markerCurrentPosition.getPosition());
+    console.log('distance between circle and marker --->', distance);
+
+    markerCurrentPosition.addListener('drag', (event) => {
+      let distance2 = google.maps.geometry.spherical.computeDistanceBetween(_circle.getCenter(), markerCurrentPosition.getPosition());
+      _circle.setRadius(distance2);
+    });
   }
 
   addMarkersToMap(markers) {
-    for (let marker of markers) {
-      let position = new google.maps.LatLng(marker.latitude, marker.longitude);
-      let mapMarker = new google.maps.Marker({
-        position: position,
+    for (const marker of markers) {
+      const position = new google.maps.LatLng(marker.latitude, marker.longitude);
+      const mapMarker = new google.maps.Marker({
+        position,
         title: marker.title,
         latitude: marker.latitude,
         longitude: marker.longitude
@@ -130,7 +209,7 @@ export class GoogleMapsJavascriptPage {
     _longitude = marker.position?.lng() ? marker.position.lng() : marker.longitude;
 
     console.log('addInfoWindowToMarker --->', marker);
-    let infoWindowContent =
+    const infoWindowContent =
       `<div id="content">
           <h2 id="firstHeading" class="firstHeading">${marker.title}</h2>
           <p>Latitude: ${_latitude}</p>
@@ -138,7 +217,7 @@ export class GoogleMapsJavascriptPage {
           <ion-button id="navigate">Navigate</ion-button>
       </div>`;
 
-    let infoWindow = new google.maps.InfoWindow({
+    const infoWindow = new google.maps.InfoWindow({
       content: infoWindowContent
     });
     marker.addListener('click', () => {
@@ -157,15 +236,15 @@ export class GoogleMapsJavascriptPage {
   }
 
   closeAllInfoWindows() {
-    for(let window of this.infoWindows) {
+    for(const window of this.infoWindows) {
       window.close();
     }
   }
 
   calculateAndDisplayDistance(origin: LatLng, destination: LatLng) {
     this.directionsService.route({
-      origin: origin,
-      destination: destination,
+      origin,
+      destination,
       travelMode: TravelMode.DRIVING
     }, (response, status) => {
       console.log('calculateAndDisplayDistance --->', response);

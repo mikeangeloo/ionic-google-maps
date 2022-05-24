@@ -18,10 +18,10 @@
 
   <ion-row>
     <ion-col size="12">
-      {{radiusLabel?.infoLabel}}
+      {{googleServ.limitRadius$.value?.infoLabel}}
     </ion-col>
     <ion-col size="12" style="height: 75vh">
-      <app-google-maps-javascript [showLimitCircle]="true" (limitRadiusEmitter)="radiusLabel = $event"></app-google-maps-javascript>
+      <app-google-maps-javascript #googleMapJs  [showLimitCircle]="false" [currMarkerDraggable]="false"></app-google-maps-javascript>
     </ion-col>
   </ion-row>
 </ion-content>

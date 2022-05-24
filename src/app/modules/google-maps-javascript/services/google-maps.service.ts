@@ -2,12 +2,22 @@ import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {LatLng} from '@capacitor/google-maps/dist/typings/definitions';
 import {OpenStreetGeoCodeI} from '../interfaces/open-street-map/open-street-geocode';
+import {BehaviorSubject} from 'rxjs';
+import {DirectionsResultI} from '../interfaces/directions-result.interface';
+
 declare let google;
+const TravelMode = google.maps.TravelMode;
 
 @Injectable({
   providedIn: 'root'
 })
 export class GoogleMapsService {
+
+  limitRadius$ = new BehaviorSubject<{distance: number; infoLabel: string}>(null);
+  currentMarkerLocation$ = new BehaviorSubject<{position: {lat: number; long: number}; geodata: OpenStreetGeoCodeI}>(null);
+
+  directionsService = new google.maps.DirectionsService();
+  directionsDisplay = new google.maps.DirectionsRenderer();
 
   constructor(
     public httpClient: HttpClient,
@@ -49,4 +59,6 @@ export class GoogleMapsService {
         return false;
     }
   }
+
+
 }

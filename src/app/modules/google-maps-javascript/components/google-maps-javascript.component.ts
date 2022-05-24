@@ -5,10 +5,12 @@ import {GoogleMapsService} from '../services/google-maps.service';
 import {OpenStreetGeoCodeI} from '../interfaces/open-street-map/open-street-geocode';
 import {MapsIconI} from '../interfaces/maps-icon.interface';
 import {DecimalPipe} from '@angular/common';
+import {DirectionsResultI} from '../interfaces/directions-result.interface';
+
 
 
 declare let google;
-
+const TravelMode = google.maps.TravelMode;
 
 @Component({
   selector: 'app-google-maps-javascript',
@@ -18,9 +20,12 @@ declare let google;
 export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
 
   @Input() markers: MarkerI[];
+  @Input() showMarkers = false;
+
   @Input() infoWindows: any = [];
   @Input() showLimitCircle = false;
-  @Output() limitRadiusEmitter = new EventEmitter();
+  @Input() currMarkerDraggable = false;
+  @Input() currMarkerIcon: MapsIconI;
 
   @ViewChild('googleMapsJs', {read: ElementRef, static: false}) mapRef: ElementRef;
   googleMap: any;
@@ -35,8 +40,6 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
   directionsService = new google.maps.DirectionsService();
   directionsDisplay = new google.maps.DirectionsRenderer();
 
-
-
   constructor(
     private googleMapsServ: GoogleMapsService,
     private decimalPipe: DecimalPipe
@@ -45,12 +48,11 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
   ngOnInit() {
   }
 
-
   ngAfterViewInit() {
     this.initWithCurrentLocation();
   }
 
-  initWithCurrentLocation() {
+  public initWithCurrentLocation() {
     const options = {
       enableHighAccuracy: true,
       timeout: 5000,
@@ -74,7 +76,39 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private initMap(latitude, longitude, currMarkerDraggable = false, icon?: MapsIconI) {
+  public calculateDistance(origin: { lat: number; long: number }, destination: { lat: number; long: number }) {
+
+    console.log('execute calculateDistance');
+    this.directionsService.route({
+      origin: new google.maps.LatLng(origin.lat, origin.long) ,
+      destination: new google.maps.LatLng(destination.lat, destination.long),
+      travelMode: TravelMode.DRIVING
+    }, (response, status) => {
+      console.log('calculateAndDisplayDistance --->', response);
+      if (status === 'OK') {
+        this.initDirections(response);
+      } else {
+        console.log('Directions request failed due to --->', status);
+        window.alert('Directions request failed due to ' + status);
+      }
+    });
+  }
+
+  public initDirections(test: DirectionsResultI) {
+    const currentLocation = new google.maps.LatLng(this.currentLat, this.currentLong);
+    const options = {
+      center: currentLocation,
+      zoom: 15,
+      disableDefaultUI: true
+    };
+    this.googleMap = new google.maps.Map(this.mapRef.nativeElement, options);
+    this.directionsDisplay.setMap(this.googleMap);
+    this.directionsDisplay.setDirections(test);
+    //this.directionsDisplay.setMap(null);
+  }
+
+
+  private async initMap(latitude, longitude) {
     const currentLocation = new google.maps.LatLng(latitude, longitude);
     const options = {
       center: currentLocation,
@@ -86,15 +120,36 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     const markerCurrentPosition = new google.maps.Marker({
       position: currentLocation,
       map: this.googleMap,
-      draggable: currMarkerDraggable,
-      icon
+      draggable: this.currMarkerDraggable,
+      icon: this.currMarkerIcon
     });
 
+    let _res = await this.googleMapsServ.getReverseCoordsData(currentLocation.lat(), currentLocation.lng());
+    this.googleMapsServ.currentMarkerLocation$.next({
+      position: {
+        lat: currentLocation.lat(),
+        long: currentLocation.lng()
+      },
+      geodata: (_res.ok && _res.data) ? _res.data : null
+    });
+
+    if (this.currMarkerDraggable) {
+      markerCurrentPosition.addListener('dragend', async (event) => {
+        let _res = await this.googleMapsServ.getReverseCoordsData(event.latLng.lat(), event.latLng.lng());
+        this.googleMapsServ.currentMarkerLocation$.next({
+          position: {
+            lat: event.latLng.lat(),
+            long: event.latLng.lng()
+          },
+          geodata: (_res.ok && _res.data) ? _res.data : null
+        });
+      });
+    }
+
     if (this.showLimitCircle) {
-      this.initCircleRadius(this.currentLat, this.currentLong, 500);
+      this.initCircleRadius(this.currentLat, this.currentLong, 1000);
     }
   }
-
 
   private initCircleRadius(centerLat: number, centerLong: number, radius: number) {
     this.limitCircle = new google.maps.Circle({
@@ -118,7 +173,7 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     } else if (radius >= 1000) {
       this.limitLabelInfo = `Radio  ${this.decimalPipe.transform(radius)} Kilómetro(s)`;
     }
-    this.limitRadiusEmitter.emit({
+    this.googleMapsServ.limitRadius$.next({
       distance: radius,
       infoLabel: this.limitLabelInfo
     });
@@ -146,11 +201,15 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     this.circleBundleMarker.addListener('dragend', (event) => {
       let _distance = this.limitCircle.getRadius();
       if (_distance) {
-        this.limitRadiusEmitter.emit({
+        this.googleMapsServ.limitRadius$.next({
           distance: _distance,
           infoLabel: this.limitLabelInfo
         });
       }
     });
   }
+
+
+
+
 }

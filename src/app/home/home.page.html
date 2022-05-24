@@ -15,4 +15,13 @@
       <ion-button routerLink="/google-maps-capacitor">Google Maps Capacitor</ion-button>
     </ion-col>
   </ion-row>
+
+  <ion-row>
+    <ion-col size="12">
+      {{radiusLabel?.infoLabel}}
+    </ion-col>
+    <ion-col size="12" style="height: 75vh">
+      <app-google-maps-javascript [showLimitCircle]="true" (limitRadiusEmitter)="radiusLabel = $event"></app-google-maps-javascript>
+    </ion-col>
+  </ion-row>
 </ion-content>

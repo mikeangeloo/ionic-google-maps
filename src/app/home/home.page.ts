@@ -9,6 +9,7 @@ import {NavController} from '@ionic/angular';
   styleUrls: ['home.page.scss'],
 })
 export class HomePage {
+  radiusLabel: any;
   constructor(
     private navCtrl: NavController
   ) {

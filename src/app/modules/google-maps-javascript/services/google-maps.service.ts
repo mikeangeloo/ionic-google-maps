@@ -3,26 +3,27 @@ import {HttpClient} from '@angular/common/http';
 import {LatLng} from '@capacitor/google-maps/dist/typings/definitions';
 import {OpenStreetGeoCodeI} from '../interfaces/open-street-map/open-street-geocode';
 import {BehaviorSubject} from 'rxjs';
-import {DirectionsResultI} from '../interfaces/directions-result.interface';
 
 declare let google;
-const TravelMode = google.maps.TravelMode;
 
 @Injectable({
   providedIn: 'root'
 })
 export class GoogleMapsService {
 
+  //region ATTRIBUTES
   limitRadius$ = new BehaviorSubject<{distance: number; infoLabel: string}>(null);
   currentMarkerLocation$ = new BehaviorSubject<{position: {lat: number; long: number}; geodata: OpenStreetGeoCodeI}>(null);
 
   directionsService = new google.maps.DirectionsService();
   directionsDisplay = new google.maps.DirectionsRenderer();
 
+  //endregion
   constructor(
     public httpClient: HttpClient,
   ) { }
 
+  //region PUBLIC METHODS
   public async getReverseCoordsData(lat, long) {
     let data = {
       format: 'jsonv2',
@@ -47,7 +48,7 @@ export class GoogleMapsService {
     }
   }
 
-  geometrySphericalCalc(type: 'computeOffset' | 'computeDistanceBetween', origin: LatLng, destination?: LatLng, distance?: number, heading?: number, radius?: number) {
+  public geometrySphericalCalc(type: 'computeOffset' | 'computeDistanceBetween', origin: LatLng, destination?: LatLng, distance?: number, heading?: number, radius?: number) {
     switch (type) {
       case 'computeOffset':
         return google.maps.geometry.spherical.computeOffset(origin, distance, heading, radius );
@@ -59,6 +60,6 @@ export class GoogleMapsService {
         return false;
     }
   }
-
+  //endregion
 
 }

@@ -1,13 +1,10 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 import {MarkerI} from '../interfaces/marker.interface';
 import {Geolocation} from '@capacitor/geolocation';
 import {GoogleMapsService} from '../services/google-maps.service';
-import {OpenStreetGeoCodeI} from '../interfaces/open-street-map/open-street-geocode';
 import {MapsIconI} from '../interfaces/maps-icon.interface';
 import {DecimalPipe} from '@angular/common';
 import {DirectionsResultI} from '../interfaces/directions-result.interface';
-
-
 
 declare let google;
 const TravelMode = google.maps.TravelMode;
@@ -19,6 +16,7 @@ const TravelMode = google.maps.TravelMode;
 })
 export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
 
+  //region ATTRIBUTES
   @Input() markers: MarkerI[];
   @Input() showMarkers = false;
 
@@ -31,7 +29,6 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
   googleMap: any;
   currentLat: number;
   currentLong: number;
-  public openStreetGeoCode: OpenStreetGeoCodeI;
 
   limitCircle = null;
   circleBundleMarker = null;
@@ -39,6 +36,8 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
 
   directionsService = new google.maps.DirectionsService();
   directionsDisplay = new google.maps.DirectionsRenderer();
+
+  //endregion
 
   constructor(
     private googleMapsServ: GoogleMapsService,
@@ -52,6 +51,7 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     this.initWithCurrentLocation();
   }
 
+  //region PUBLIC METHODS
   public initWithCurrentLocation() {
     const options = {
       enableHighAccuracy: true,
@@ -107,7 +107,61 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     //this.directionsDisplay.setMap(null);
   }
 
+  public addMarkersToMap(markers: MarkerI[]) {
+    for (const marker of markers) {
+      const position = new google.maps.LatLng(marker.latitude, marker.longitude);
+      const mapMarker = new google.maps.Marker({
+        position,
+        icon: marker.icon
+      });
 
+      mapMarker.setMap(this.googleMap);
+      //this.addInfoWindowToMarker(mapMarker);
+    }
+  }
+
+  public addInfoWindowToMarker(marker) {
+    let _latitude;
+    let _longitude;
+    _latitude = marker.position?.lat() ? marker.position.lat() : marker.latitude;
+    _longitude = marker.position?.lng() ? marker.position.lng() : marker.longitude;
+
+    console.log('addInfoWindowToMarker --->', marker);
+    const infoWindowContent =
+      `<div id="content">
+          <h2 id="firstHeading" class="firstHeading">${marker.title}</h2>
+          <p>Latitude: ${_latitude}</p>
+          <p>Longitude: ${_longitude}</p>
+          <ion-button id="navigate">Navigate</ion-button>
+      </div>`;
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: infoWindowContent
+    });
+    marker.addListener('click', () => {
+      this.closeAllInfoWindows();
+      infoWindow.open(this.googleMap, marker);
+
+      google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+        document.getElementById('navigate').addEventListener('click', () => {
+          console.log('navigate button clicked');
+          // code to navigate using google maps app or new tab in browser
+          window.open('https://www.google.com/maps/dir/?api=1&destination=' + marker.latitude + ',' + marker.longitude);
+        });
+      });
+    });
+    this.infoWindows.push(infoWindow);
+  }
+
+  public closeAllInfoWindows() {
+    for(const window of this.infoWindows) {
+      window.close();
+    }
+  }
+
+  //endregion
+
+  //region PRIVATE METHODS
   private async initMap(latitude, longitude) {
     const currentLocation = new google.maps.LatLng(latitude, longitude);
     const options = {
@@ -209,7 +263,6 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     });
   }
 
-
-
+  //endregion
 
 }

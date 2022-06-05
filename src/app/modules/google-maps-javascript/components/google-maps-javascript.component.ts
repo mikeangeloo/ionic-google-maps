@@ -38,7 +38,7 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
   directionsDisplay = new google.maps.DirectionsRenderer();
 
   //kmlFileSrc = 'https://developers.google.com/maps/documentation/javascript/examples/kml/westcampus.kml';
-  kmlFileSrc = 'https://projects.miguelangelrl.com/google-maps-data/rivers.kml';
+  kmlFileSrc = 'https://projects.miguelangelrl.com/google-maps-data/test.kml';
 
 
   //endregion

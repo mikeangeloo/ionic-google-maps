@@ -1,4 +1,19 @@
 #google-maps-js {
-  height: 100%;
+  //height: 100%;
+  //width: 100%;
+
+  height: 50%;
   width: 100%;
+  overflow: hidden;
+  float: left;
+  border: thin solid #333;
+}
+#capture {
+  height: 50%;
+  width: 100%;
+  overflow: hidden;
+  float: left;
+  background-color: #ECECFB;
+  border: thin solid #333;
+  border-left: none;
 }

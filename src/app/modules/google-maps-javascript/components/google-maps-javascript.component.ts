@@ -37,6 +37,10 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
   directionsService = new google.maps.DirectionsService();
   directionsDisplay = new google.maps.DirectionsRenderer();
 
+  //kmlFileSrc = 'https://developers.google.com/maps/documentation/javascript/examples/kml/westcampus.kml';
+  kmlFileSrc = 'https://projects.miguelangelrl.com/google-maps-data/rivers.kml';
+
+
   //endregion
 
   constructor(
@@ -203,6 +207,8 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     if (this.showLimitCircle) {
       this.initCircleRadius(this.currentLat, this.currentLong, 1000);
     }
+
+    this.addKML(this.kmlFileSrc);
   }
 
   private initCircleRadius(centerLat: number, centerLong: number, radius: number) {
@@ -263,6 +269,20 @@ export class GoogleMapsJavascriptComponent implements OnInit, AfterViewInit {
     });
   }
 
+  private addKML(src) {
+    let kmlLayer = new google.maps.KmlLayer(src, {
+      suppressInfoWindows: true,
+      preserveViewport: false,
+      map: this.googleMap
+    });
+    console.log('kmlLayer --->', kmlLayer);
+    kmlLayer.addListener('click', (event) => {
+      console.log('kmlLayer click -->', event);
+      let content = event.featureData.infoWindowHtml;
+      let testimonial = document.getElementById('capture');
+      testimonial.innerHTML = content;
+    });
+  }
   //endregion
 
 }

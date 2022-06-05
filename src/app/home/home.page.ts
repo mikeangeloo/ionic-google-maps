@@ -19,21 +19,21 @@ export class HomePage {
   }
 
   ionViewDidEnter() {
-    this.googleServ.currentMarkerLocation$.subscribe(res => {
-      console.log('currentMarkerLocation$ --->', res);
-      if (res) {
-        this.googleMapJs.calculateDistance(
-          {
-            lat: this.googleServ.currentMarkerLocation$.value.position.lat,
-            long: this.googleServ.currentMarkerLocation$.value.position.long
-          },
-          {
-            lat: 20.6568434,
-            long: -87.0942691
-          }
-        );
-      }
-    });
+    // this.googleServ.currentMarkerLocation$.subscribe(res => {
+    //   console.log('currentMarkerLocation$ --->', res);
+    //   if (res) {
+    //     this.googleMapJs.calculateDistance(
+    //       {
+    //         lat: this.googleServ.currentMarkerLocation$.value.position.lat,
+    //         long: this.googleServ.currentMarkerLocation$.value.position.long
+    //       },
+    //       {
+    //         lat: 20.6568434,
+    //         long: -87.0942691
+    //       }
+    //     );
+    //   }
+    // });
 
 
   }
